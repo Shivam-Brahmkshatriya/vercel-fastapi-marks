@@ -1,31 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from typing import List
+import json
+import os
 
 app = FastAPI()
 
-# Enable CORS for all domains
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# PASTE YOUR JSON DATA HERE directly
-marks_list = [
-    {"name": "mGHfxNF", "marks": 80},
-    {"name": "5tG", "marks": 67},
-    {"name": "n", "marks": 60},
-    {"name": "7pdBs9CA", "marks": 55},
-    {"name": "3YUhWw", "marks": 42},
-    {"name": "Wyx2lKN8", "marks": 62},
-    {"name": "xYpiUkMRyI", "marks": 42}
-]
+# Get path to JSON file relative to current file
+json_path = os.path.join(os.path.dirname(__file__), "q-vercel-python.json")
+
+# Read JSON once at startup
+with open(json_path, "r") as f:
+    marks_list = json.load(f)
 
 # Build dict for fast lookup
 marks_dict = {entry["name"]: entry["marks"] for entry in marks_list}
 
 @app.get("/api")
-def get_marks(name: List[str] = []):
-    return {"marks": [marks_dict.get(n) for n in name]}
+async def get_marks(request: Request):
+    query_params = request.query_params.getlist("name")
+    result = [marks_dict.get(name) for name in query_params]
+    return JSONResponse(content={"marks": result})
