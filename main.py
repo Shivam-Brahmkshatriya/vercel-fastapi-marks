@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
+import json
 import os
 
 app = FastAPI()
@@ -13,16 +14,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dummy marks data (you can read from a file or database if needed)
-marks_data = {
-    "Alice": 10,
-    "Bob": 20,
-    "Charlie": 30,
-    "David": 40,
-    "Eve": 50
-}
+# Read JSON file at import time
+json_path = os.path.join(os.path.dirname(__file__), "q-vercel-python.json")
+with open(json_path, "r") as f:
+    data = json.load(f)
+
+# Create a name → marks dictionary
+marks_dict = {entry["name"]: entry["marks"] for entry in data}
 
 @app.get("/api")
 def get_marks(name: List[str] = []):
-    result = [marks_data.get(n, 0) for n in name]
+    result = [marks_dict.get(n) for n in name]
     return {"marks": result}
